@@ -32,6 +32,9 @@ public class SimpleMPDSocket implements MPDSocket {
         try {
             while((s = in.readLine()) != null) {
                 sb.append(s);
+                if (sb.indexOf("OK")== 0) {
+                    return sb.toString();
+                }
             }
         } catch (IOException ioe) {
             logger.error("Couldnt read the socket for some reason");
