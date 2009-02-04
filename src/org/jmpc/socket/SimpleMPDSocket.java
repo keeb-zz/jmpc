@@ -24,8 +24,15 @@ public class SimpleMPDSocket implements MPDSocket {
     private BufferedReader in;
     private BufferedWriter out;
 
-    @Override
-    public String read() {
+    private String host;
+    private int port;
+
+    public SimpleMPDSocket(String host, int port) {
+        this.host = host;
+        this.port = port;
+    }
+
+    private String read() {
         String s;
         StringBuilder sb = new StringBuilder();
 
@@ -44,21 +51,21 @@ public class SimpleMPDSocket implements MPDSocket {
     }
 
     @Override
-    public void submit(String command) {
+    public String submit(String command) {
         logger.info("Submitting the following command to MPD: " + command);
-
         try {
-            if (!command.contains("\n"))
-                command += "\n";
+            if(!isConnected()) connect();
+            if (!command.contains("\n")) command += "\n";
             out.write(command);
             out.flush();
         } catch (IOException ioe) {
             logger.error("Socket not open.");
-        }
+        } 
+        return read();
     }
 
     @Override
-    public void connect(String host, int port) {
+    public boolean connect(String host, int port) {
         logger.info("Connecting to " + host + " on " + port);
         try {
             Socket socket = new Socket(host, port);
@@ -69,11 +76,37 @@ public class SimpleMPDSocket implements MPDSocket {
             out = new BufferedWriter(new OutputStreamWriter(
                     new BufferedOutputStream(socket.getOutputStream())));
 
+            logger.info("Everything is set up");
+
         } catch (UnknownHostException uhe) {
             logger.error("Could not find host");
         } catch (IOException ioe) {
             logger.error("Could not open socket");
         }
+
+        return checkCommandStatus();
     }
+
+    public boolean connect() throws UnknownHostException {
+        if (host == null || port == 0) {
+            logger.error("Connect called without host/port set!");
+            throw new UnknownHostException("Host and port were not set!");
+        }
+
+        return connect(host, port);
+    }
+
+
+    private boolean checkCommandStatus() {
+        if (isConnected()) {
+            return read().contains("OK");
+        }
+        return true;
+    }
+
+    private boolean isConnected() {
+        return !(socket == null && in == null && out == null);
+    }
+
 
 }

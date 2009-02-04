@@ -1,7 +1,6 @@
 package org.jmpc.socket;
 
 public interface MPDSocket {
-    public void connect(String host, int port);
-    public void submit(String command);
-    public String read();
+    public boolean connect(String host, int port);
+    public String submit(String command);
 }
