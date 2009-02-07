@@ -39,13 +39,17 @@
     </target>
 
     <target name="build">
-        <mkdir dir="{build.dir}" />
+        <mkdir dir="${build.dir}" />
         <javac destdir="${build.dir}" source="1.6" target="1.6" debug="true"
             deprecation="false" optimize="false" failonerror="true">
                 <src path="${src.dir}" />
                 <classpath refid="master-classpath"/>
         </javac>
 
+    </target>
+
+    <target name="make-jar" depends="build">
+        <jar basedir="${build.dir}" destfile="${build.dir}/${name}.jar" />
     </target>
 
 </project>

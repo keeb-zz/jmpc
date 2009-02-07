@@ -30,6 +30,7 @@ public class SimpleMPDSocket implements MPDSocket {
     public SimpleMPDSocket(String host, int port) {
         this.host = host;
         this.port = port;
+        connect(host,port);
     }
 
     private String read() {
@@ -38,15 +39,15 @@ public class SimpleMPDSocket implements MPDSocket {
 
         try {
             while((s = in.readLine()) != null) {
-                sb.append(s);
-                if (sb.indexOf("OK")== 0) {
+                sb.append(s + "\n");
+                if (sb.toString().contains("OK")) {
                     return sb.toString();
                 }
             }
         } catch (IOException ioe) {
             logger.error("Couldnt read the socket for some reason");
         }
-
+        logger.info("returning outside of the loop");
         return sb.toString();
     }
 
@@ -54,21 +55,31 @@ public class SimpleMPDSocket implements MPDSocket {
     public String submit(String command) {
         logger.info("Submitting the following command to MPD: " + command);
         try {
-            if(!isConnected()) connect();
             if (!command.contains("\n")) command += "\n";
             out.write(command);
             out.flush();
+            return read();
         } catch (IOException ioe) {
-            logger.error("Socket not open.");
+            logger.error("Socket not open. Reconnecting and resubmitting.");
+            try {
+                if (connect()) {
+                    logger.debug("Resubmitting command:" + command);
+                    submit(command);
+                } else {
+                    logger.error("Could not reconnect");
+                }
+            } catch (UnknownHostException e) {
+                logger.error("wtf");
+            };
         } 
-        return read();
+        return "OK";
     }
 
     @Override
     public boolean connect(String host, int port) {
         logger.info("Connecting to " + host + " on " + port);
         try {
-            Socket socket = new Socket(host, port);
+            socket = new Socket(host, port);
 
             in = new BufferedReader(new InputStreamReader(
                     new BufferedInputStream(socket.getInputStream())));
@@ -98,15 +109,7 @@ public class SimpleMPDSocket implements MPDSocket {
 
 
     private boolean checkCommandStatus() {
-        if (isConnected()) {
-            return read().contains("OK");
-        }
-        return true;
+        return read().contains("OK");
     }
-
-    private boolean isConnected() {
-        return !(socket == null && in == null && out == null);
-    }
-
 
 }

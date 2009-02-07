@@ -4,6 +4,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.jmpc.socket.SimpleMPDSocket;
+import org.jmpc.model.Song;
 
 public class SimpleMPDPlayer implements MPDPlayer {
 
@@ -28,6 +29,13 @@ public class SimpleMPDPlayer implements MPDPlayer {
 
     public void pause() {
         mpd.submit("pause");
+    }
+
+
+    public Song getCurrentSong() {
+        String response;
+        response = mpd.submit("currentsong");
+        return new Song(response);
     }
 
 }
